@@ -1,0 +1,68 @@
+services:
+  provider-1:
+    build: ./provider
+    environment:
+      - NAME="provider_1"
+    networks:
+      - lab_1
+  provider-2:
+    build: ./provider
+    environment:
+      - NAME="provider_2"
+    networks:
+      - lab_1
+  provider-3:
+    build: ./provider
+    environment:
+      - NAME="provider_3"
+    networks:
+      - lab_1
+
+  load_balancer_p:
+    build: ./provider_load_balancer
+    ports:
+      - "80:80"
+    depends_on:
+      - provider-1
+      - provider-2
+      - provider-3
+    networks:
+      - lab_1
+
+  consumer-1:
+    build: ./consumer
+    environment:
+      - NAME="consumer_1"
+    depends_on:
+      - load_balancer_p
+    networks:
+      - lab_1
+  consumer-2:
+    build: ./consumer
+    environment:
+      - NAME="consumer_2"
+    depends_on:
+      - load_balancer_p
+    networks:
+      - lab_1
+  consumer-3:
+    build: ./consumer
+    environment:
+      - NAME="consumer_3"
+    depends_on:
+      - load_balancer_p
+    networks:
+      - lab_1
+
+  load_balancer_c:
+    build: ./consumer_load_balancer
+    ports:
+      - "8000:8000"
+    depends_on:
+      - consumer-1
+      - consumer-2
+      - consumer-3
+    networks:
+      - lab_1
+networks:
+  lab_1:

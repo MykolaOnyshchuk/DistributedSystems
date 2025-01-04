@@ -1,0 +1,69 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: lab3
+      RABBITMQ_DEFAULT_PASS: messageBroker
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 7s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+    networks:
+      - lab_3
+
+  postgres:
+    image: postgres:15
+    user: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: event_sourcing
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - lab_3
+    healthcheck:
+      test: "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"
+      interval: 7s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+
+  provider:
+    build: ./provider
+    environment:
+      - NAME="provider"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - lab_3
+
+  consumer:
+    build: ./consumer
+    ports:
+      - "5050:5050"
+    environment:
+      - NAME="consumer"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - lab_3
+
+volumes:
+  postgres_data:
+
+networks:
+  lab_3:

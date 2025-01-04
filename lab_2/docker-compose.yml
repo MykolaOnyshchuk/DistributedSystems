@@ -1,0 +1,91 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: lab2
+      RABBITMQ_DEFAULT_PASS: messageBroker
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 7s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+    networks:
+      - lab_2
+  provider-1:
+    build: ./provider
+    environment:
+      - NAME="provider_1"
+      - PORT=8080
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - lab_2
+  provider-2:
+    build: ./provider
+    environment:
+      - NAME="provider_2"
+      - PORT=8080
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - lab_2
+  provider-3:
+    build: ./provider
+    environment:
+      - NAME="provider_3"
+      - PORT=8080
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - lab_2
+
+  consumer-1:
+    build: ./consumer
+    environment:
+      - NAME="consumer_1"
+      - PORT=5050
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - lab_2
+  consumer-2:
+    build: ./consumer
+    environment:
+      - NAME="consumer_2"
+      - PORT=5050
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - lab_2
+  consumer-3:
+    build: ./consumer
+    environment:
+      - NAME="consumer_3"
+      - PORT=5050
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - lab_2
+
+  load_balancer_c:
+    build: ./consumer_load_balancer
+    ports:
+      - "8000:8000"
+    depends_on:
+      - consumer-1
+      - consumer-2
+      - consumer-3
+    networks:
+      - lab_2
+networks:
+  lab_2:
