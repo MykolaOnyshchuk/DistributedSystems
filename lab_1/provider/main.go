@@ -77,7 +77,7 @@ func computeHandler(w http.ResponseWriter, r *http.Request) {
 
 	startTime := time.Now()
 
-	sum := new(big.Int) // Ініціалізуємо sum як 0
+	sum := new(big.Int)
 	currentTerm := new(big.Int).Set(number)
 
 	for i := 0; i < 100; i++ {

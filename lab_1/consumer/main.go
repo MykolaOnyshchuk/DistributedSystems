@@ -47,7 +47,6 @@ func validateJWT(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		if token.Valid {
-			// Зберігаємо claims у контекст на випадок, якщо знадобиться
 			ctx := context.WithValue(r.Context(), "payload", token.Claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		} else {
@@ -56,8 +55,6 @@ func validateJWT(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// Ця функція залишена, якщо ви все ж будете генерувати JWT окремо.
-// Але для createTaskHandler вона тепер не використовується.
 func randomizeJWT() string {
 	currentDate := time.Now().Unix()
 	payload := jwt.MapClaims{
@@ -77,28 +74,24 @@ func randomizeJWT() string {
 func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 	totalStartTime := time.Now()
 
-	// Забираємо з URL параметри
 	inputData := r.URL.Query().Get("input_data")
 	if inputData == "" {
 		http.Error(w, `{"error":"Input data is required"}`, http.StatusBadRequest)
 		return
 	}
 
-	// Беремо оригінальний токен з запиту (той, що прийшов від клієнта)
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
 		http.Error(w, `{"error":"Authorization header missing"}`, http.StatusUnauthorized)
 		return
 	}
 
-	// Формуємо заголовки для запиту до провайдера
 	headers := map[string]string{
-		"Authorization": authHeader, // передаємо той самий токен далі
+		"Authorization": authHeader,
 		"Accept":        "application/json",
 		"Content-Type":  "application/json",
 	}
 
-	// Формуємо JSON-тіло з input_data
 	bodyData := map[string]string{
 		"input_data": inputData,
 	}
@@ -108,7 +101,6 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Створюємо POST-запит до провайдера
 	req, err := http.NewRequest("POST", providerUrl, bytes.NewBuffer(body))
 	if err != nil {
 		http.Error(w, `{"error":"Failed to create request"}`, http.StatusInternalServerError)
@@ -118,7 +110,6 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 		req.Header.Set(key, value)
 	}
 
-	// Надсилаємо запит
 	client := &http.Client{}
 	startTime := time.Now()
 	resp, err := client.Do(req)
@@ -128,7 +119,6 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	// Розпарсимо відповідь
 	var responseBody map[string]interface{}
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(&responseBody); err != nil {
@@ -138,7 +128,6 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	requestTime := time.Since(startTime).Seconds()
 
-	// Формуємо відповідь для клієнта
 	response := map[string]interface{}{
 		"response":     responseBody,
 		"request_time": requestTime,
